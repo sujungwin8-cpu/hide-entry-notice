@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>숨바꼭질 2호점 입장 안내</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@500&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 폰 폭(최대 440px) 한 칼럼. 제목 → 안내사항 카드 → 입력 칸 → 하단 고정 진행바, 저장되면 입장 확인 화면. 내용은 전부 구글 시트에서 불러온다. */
+:root {
+  --bg: #edf0f3;
+  --card: #ffffff;
+  --fg: #151a21;
+  --muted: #566272;
+  --line: #d5dbe2;
+  --line-strong: #8795a6;
+  --chip: #e7ebf0;
+  --chip-fg: #3b4655;
+  --accent: #b96a00;
+  --accent-bg: #fff1d9;
+  --accent-fg: #6b3e00;
+  --ok: #16794f;
+  --ok-bg: #ddf3e8;
+  --ok-fg: #0e5a3a;
+  --on-ok: #ffffff;
+  --pin-off: #c6ced8;
+  --font-display: 'Black Han Sans', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-body: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1318;
+    --card: #171d25;
+    --fg: #e8ecf1;
+    --muted: #9ba7b6;
+    --line: #2a333f;
+    --line-strong: #6b7a8c;
+    --chip: #232c37;
+    --chip-fg: #c3ccd8;
+    --accent: #f0b04a;
+    --accent-bg: #3a2a0e;
+    --accent-fg: #f6cf8c;
+    --ok: #46c28d;
+    --ok-bg: #12392a;
+    --ok-fg: #8be0ba;
+    --on-ok: #06251a;
+    --pin-off: #2e3845;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 440px; margin: 0 auto; }
+.pad {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font-family: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* 불러오는 중, 오류 */
+.state { display: grid; justify-items: center; gap: 12px; padding-block: 80px 40px; text-align: center; }
+.state p { margin: 0; color: var(--muted); max-width: 30em; }
+.notice { margin: 0; padding-block: 10px; background: var(--accent-bg); color: var(--accent-fg); font-size: 13px; font-weight: 700; }
+
+/* 머리말 */
+.head { padding-block: 24px 16px; }
+.head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.eyebrow { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--muted); }
+.lock { width: 44px; height: 50px; flex: none; overflow: visible; color: var(--accent); transition: color .3s; }
+.lock .shackle { transform-box: view-box; transform-origin: 11px 20px; transition: transform .5s cubic-bezier(.3, 1.4, .5, 1); }
+.lock.open { color: var(--ok); }
+.lock.open .shackle { transform: translateY(-4px) rotate(-32deg); }
+h1 { margin: 4px 0 12px; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1.3; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 34em; white-space: pre-line; }
+
+/* 안내사항 카드 */
+.rules { display: grid; gap: 12px; padding-block: 4px 20px; }
+.rule { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; transition: border-color .2s; }
+.rule.done { border-color: var(--ok); }
+.rule-body { padding: 16px 16px 14px; display: grid; gap: 8px; }
+.tag {
+  justify-self: start;
+  margin: 0;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--chip);
+  color: var(--chip-fg);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.tag.warn { background: var(--accent-bg); color: var(--accent-fg); }
+.rule h2 { margin: 0; font-size: 17px; line-height: 1.45; font-weight: 700; text-wrap: balance; }
+.rule ul { margin: 0; padding-left: 1.15em; display: grid; gap: 6px; }
+.rule li::marker { color: var(--muted); }
+.chk {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 16px;
+  border-top: 1px solid var(--line);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.rule.done .chk { background: var(--ok-bg); color: var(--ok-fg); }
+.chk input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  display: grid;
+  place-content: center;
+  border: 2px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--card);
+  transition: background .15s, border-color .15s;
+}
+.chk input::after {
+  content: "";
+  width: 13px;
+  height: 7px;
+  border-left: 3px solid var(--on-ok);
+  border-bottom: 3px solid var(--on-ok);
+  transform: translateY(-1px) rotate(-45deg) scale(0);
+  transition: transform .15s;
+}
+.chk input:checked { background: var(--ok); border-color: var(--ok); }
+.chk input:checked::after { transform: translateY(-1px) rotate(-45deg) scale(1); }
+
+/* 입력 칸 */
+.who { padding-block: 0 20px; display: grid; gap: 14px; }
+.final { margin: 0 0 4px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; font-weight: 500; white-space: pre-line; }
+.wf { display: grid; gap: 6px; min-width: 0; }
+.wf label { font-weight: 700; }
+.wf input, .wf select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 17px;
+}
+.wf input::placeholder { color: var(--muted); opacity: .8; }
+.wf select:disabled { opacity: .6; }
+.wf input[type="time"] { display: block; min-width: 0; -webkit-appearance: none; appearance: none; text-align: left; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* 하단 고정 바 */
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.bar-in { display: grid; gap: 10px; }
+.pins { display: flex; gap: 6px; }
+.pin { flex: 1; height: 6px; border-radius: 3px; background: var(--pin-off); transition: background .2s; }
+.pin.on { background: var(--accent); }
+.all .pin.on { background: var(--ok); }
+.status { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+.err { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--accent-bg); color: var(--accent-fg); font-size: 13px; font-weight: 700; }
+.go {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.go:disabled { background: var(--chip); color: var(--muted); cursor: not-allowed; }
+
+/* 입장 확인 화면 */
+.pass { padding-block: 28px 32px; display: grid; gap: 16px; }
+.pass-card {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 20px 24px;
+  text-align: center;
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+  border: 2px solid var(--ok);
+  border-radius: 20px;
+}
+.pass-card .lock { width: 72px; height: 82px; color: var(--ok); }
+.pass-card h2 { margin: 6px 0 0; font-family: var(--font-display); font-weight: 400; font-size: 38px; line-height: 1.2; }
+.pass-name { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; color: var(--fg); }
+.pass-sub { margin: 0; font-size: 17px; font-weight: 700; color: var(--fg); overflow-wrap: anywhere; }
+.times { display: grid; gap: 10px; width: 100%; margin: 14px 0 6px; padding: 14px 0 0; border-top: 1px solid var(--ok); }
+.times div { display: grid; gap: 2px; }
+.times dt { font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.times dd { margin: 0; font-family: var(--font-mono); font-size: 19px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.times .live dt::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .25; } }
+.pass-note { margin: 0; font-weight: 500; text-wrap: balance; white-space: pre-line; }
+.ghost {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* 구글 시트 스크립트를 배포하면 나오는 웹앱 주소를 여기에 넣는다 */
+  var EXEC_URL = 'https://script.google.com/macros/s/여기에_배포_ID/exec';
+
+  var KEY = 'hide-consent-v1';
+  var root = document.getElementById('app');
+  var timer = null;
+
+  function h(tag, attrs, kids) {
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
+      else if (v === true) el.setAttribute(k, '');
+      else if (v !== false && v != null) el.setAttribute(k, v);
+    });
+    (kids || []).forEach(function (c) {
+      if (c == null || c === false) return;
+      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return el;
+  }
+  function lockSvg(open, hole) {
+    var d = document.createElement('div');
+    d.innerHTML = '<svg class="lock' + (open ? ' open' : '') + '" viewBox="0 0 40 46" aria-hidden="true">' +
+      '<g class="shackle"><path d="M11 20V13a9 9 0 0 1 18 0v7" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></g>' +
+      '<rect x="5" y="20" width="30" height="22" rx="5" fill="currentColor"/>' +
+      '<circle cx="20" cy="29" r="3" fill="' + hole + '"/>' +
+      '<rect x="18.7" y="29.5" width="2.6" height="6.5" rx="1.3" fill="' + hole + '"/></svg>';
+    return d.firstChild;
+  }
+  function p2(n) { return n < 10 ? '0' + n : '' + n; }
+  function hms(d) { return p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds()); }
+  function ymd(d) { return d.getFullYear() + '.' + p2(d.getMonth() + 1) + '.' + p2(d.getDate()) + ' (' + '일월화수목금토'.charAt(d.getDay()) + ')'; }
+  function maskPhone(v) {
+    var d = String(v).replace(/[^0-9]/g, '');
+    return d.length >= 7 ? d.slice(0, 3) + '-****-' + d.slice(-4) : '***';
+  }
+  function newRid() { return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12); }
+  function show(node) {
+    if (timer) { clearInterval(timer); timer = null; }
+    root.textContent = '';
+    root.appendChild(node);
+  }
+
+  function api(options) {
+    var c = new AbortController();
+    var t = setTimeout(function () { c.abort(); }, 25000);
+    options.signal = c.signal;
+    options.redirect = 'follow';
+    return fetch(EXEC_URL, options).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    }).then(function (j) { clearTimeout(t); return j; }, function (e) { clearTimeout(t); throw e; });
+  }
+
+  /* ---------- 불러오기 ---------- */
+  function showState(text, retry) {
+    show(h('div', { class: 'state pad' }, [
+      lockSvg(false, 'var(--bg)'),
+      h('p', { text: text }),
+      retry ? h('button', { class: 'ghost', type: 'button', id: 'retry', text: '다시 시도', onclick: function () { load(); } }) : null
+    ]));
+  }
+  function load(notice) {
+    if (EXEC_URL.indexOf('여기에') >= 0) { showState('구글 시트가 아직 연결되지 않았습니다.', false); return; }
+    showState('안내 내용을 불러오는 중입니다.', false);
+    api({ method: 'GET' }).then(function (cfg) {
+      if (!cfg.ok || !cfg.themes || !cfg.themes.length) throw new Error('bad config');
+      render(cfg, notice);
+    }).catch(function () {
+      showState('안내 내용을 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요. 계속 안 되면 직원에게 말씀해 주세요.', true);
+    });
+  }
+
+  /* ---------- 화면 ---------- */
+  function render(cfg, notice) {
+    var key = KEY + ':' + cfg.version + ':' + cfg.today.date;
+    var saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) {}
+    if (saved && typeof saved.at === 'number' && saved.name) showPass(cfg, key, saved);
+    else showIntro(cfg, key, notice);
+  }
+
+  function showIntro(cfg, key, notice) {
+    var S = cfg.settings;
+    var total = cfg.rules.length;
+    var cards = [], cbs = [], pins = [];
+    var box = h('div');
+    var lock = lockSvg(false, 'var(--bg)');
+    var rid = null, sending = false;
+
+    var title = h('h1');
+    (S.title || '게임 이용 안내').split('\n').forEach(function (t, i) {
+      if (i) title.appendChild(document.createElement('br'));
+      title.appendChild(document.createTextNode(t));
+    });
+    var head = h('header', { class: 'head pad' }, [
+      h('div', { class: 'head-top' }, [
+        h('p', { class: 'eyebrow', text: S.shop ? S.shop + ' · 입장 전 확인' : '입장 전 확인' }),
+        lock
+      ]),
+      title,
+      S.lead ? h('p', { class: 'lead', text: S.lead }) : null
+    ]);
+
+    var rulesEl = h('div', { class: 'rules pad' });
+    cfg.rules.forEach(function (r, i) {
+      var cb = h('input', { type: 'checkbox', id: 'c' + i });
+      cb.addEventListener('change', update);
+      cbs.push(cb);
+      var card = h('section', { class: 'rule' }, [
+        h('div', { class: 'rule-body' }, [
+          r.tag ? h('p', { class: 'tag' + (r.warn ? ' warn' : ''), text: r.tag }) : null,
+          r.title ? h('h2', { text: r.title }) : null,
+          r.items.length ? h('ul', null, r.items.map(function (t) { return h('li', { text: t }); })) : null
+        ]),
+        h('label', { class: 'chk', 'for': 'c' + i }, [cb, h('span', { text: r.chk || '확인했어요' })])
+      ]);
+      cards.push(card);
+      rulesEl.appendChild(card);
+    });
+
+    var nameEl = h('input', { id: 'name', type: 'text', autocomplete: 'name', enterkeyhint: 'next', maxlength: 20, placeholder: '본인 이름' });
+    var phoneEl = h('input', { id: 'phone', type: 'tel', inputmode: 'numeric', autocomplete: 'tel', maxlength: 13, placeholder: '010-0000-0000' });
+    var themeEl = h('select', { id: 'theme' }, [h('option', { value: '', text: '테마를 선택해 주세요' })].concat(cfg.themes.map(function (t) {
+      return h('option', { value: t.name, text: t.name });
+    })));
+    var slotBox = h('div');
+    var slotEl = null;
+    function renderSlot() {
+      var prev = slotEl ? slotEl.value : '';
+      var cur = cfg.themes.filter(function (t) { return t.name === themeEl.value; })[0] || null;
+      slotBox.textContent = '';
+      if (!cur) {
+        slotEl = h('select', { id: 'slot', disabled: true }, [h('option', { value: '', text: '테마를 먼저 선택해 주세요' })]);
+      } else if (cur.slots.length) {
+        slotEl = h('select', { id: 'slot' }, [h('option', { value: '', text: '시간을 선택해 주세요' })].concat(cur.slots.map(function (s) {
+          return h('option', { value: s, text: s });
+        })));
+        if (cur.slots.indexOf(prev) >= 0) slotEl.value = prev;
+      } else {
+        slotEl = h('input', { id: 'slot', type: 'time' });
+      }
+      slotEl.addEventListener('input', update);
+      slotEl.addEventListener('change', update);
+      slotBox.appendChild(slotEl);
+    }
+    themeEl.addEventListener('change', renderSlot);
+    [nameEl, phoneEl, themeEl].forEach(function (el) {
+      el.addEventListener('input', update);
+      el.addEventListener('change', update);
+    });
+    renderSlot();
+
+    function wf(id, label, el) { return h('div', { class: 'wf' }, [h('label', { 'for': id, text: label }), el]); }
+    var todayText = '오늘은 ' + cfg.today.label + (cfg.today.holiday ? ' ' + cfg.today.holiday : '') + ', ' + cfg.today.kindLabel + ' 시간표입니다.';
+    var who = h('div', { class: 'who pad' }, [
+      S.finalText ? h('p', { class: 'final', text: S.finalText }) : null,
+      wf('name', '이름', nameEl),
+      wf('phone', '연락처', phoneEl),
+      wf('theme', '테마', themeEl),
+      h('div', { class: 'wf' }, [
+        h('label', { 'for': 'slot', text: '테마 시간' }),
+        h('p', { class: 'hint', id: 'today', text: todayText }),
+        slotBox
+      ]),
+      S.nameHint ? h('p', { class: 'hint', text: S.nameHint }) : null
+    ]);
+
+    function missing() {
+      if (!nameEl.value.trim()) return '이름을 입력해 주세요.';
+      var d = phoneEl.value.replace(/[^0-9]/g, '');
+      if (d.length < 9 || d.length > 11) return '연락처를 입력해 주세요.';
+      if (!themeEl.value) return '테마를 선택해 주세요.';
+      if (!slotEl.value) return slotEl.tagName === 'SELECT' ? '테마 시간을 선택해 주세요.' : '테마 시간을 입력해 주세요.';
+      return '';
+    }
+
+    var pinsEl = h('div', { class: 'pins', 'aria-hidden': 'true' });
+    for (var i = 0; i < total; i++) { var p = h('span', { class: 'pin' }); pins.push(p); pinsEl.appendChild(p); }
+    var statusEl = h('p', { class: 'status', 'aria-live': 'polite' });
+    var errEl = h('p', { class: 'err', id: 'err', role: 'alert', hidden: true });
+    var btn = h('button', { class: 'go', id: 'go', type: 'submit', disabled: true, text: S.btn || '위 내용에 동의하고 입장 확인받기' });
+    var bar = h('div', { class: 'bar' }, [h('div', { class: 'bar-in pad' }, [pinsEl, statusEl, errEl, btn])]);
+
+    function update() {
+      var n = 0;
+      cbs.forEach(function (c, i) {
+        if (c.checked) n++;
+        cards[i].classList.toggle('done', c.checked);
+        pins[i].classList.toggle('on', c.checked);
+      });
+      var allRead = n === total;
+      var need = missing();
+      box.classList.toggle('all', allRead);
+      lock.classList.toggle('open', allRead);
+      btn.disabled = sending || !(allRead && !need);
+      if (sending) statusEl.textContent = '저장하는 중입니다…';
+      else if (!allRead) statusEl.textContent = n + ' / ' + total + ' 확인 · ' + (total - n) + '개 남았어요';
+      else statusEl.textContent = '모두 확인했어요. ' + (need || '아래 버튼을 눌러 주세요.');
+    }
+    function fail(text) {
+      errEl.textContent = text;
+      errEl.hidden = false;
+    }
+
+    var form = h('form', { novalidate: true }, [rulesEl, who, bar]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (btn.disabled) return;
+      errEl.hidden = true;
+      sending = true;
+      update();
+      rid = rid || newRid();
+      var data = {
+        rid: rid,
+        version: cfg.version,
+        date: cfg.today.date,
+        agreed: total,
+        name: nameEl.value.trim(),
+        phone: phoneEl.value.trim(),
+        theme: themeEl.value,
+        slot: slotEl.value
+      };
+      api({ method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(data) }).then(function (res) {
+        sending = false;
+        if (res.ok) {
+          var rec = { name: data.name, phone: maskPhone(data.phone), theme: data.theme, slot: data.slot, at: res.at || Date.now() };
+          try { sessionStorage.setItem(key, JSON.stringify(rec)); } catch (err) {}
+          showPass(cfg, key, rec);
+          window.scrollTo(0, 0);
+          return;
+        }
+        if (res.code === 'stale') { load('안내 내용이나 날짜가 바뀌었습니다. 다시 확인해 주세요.'); return; }
+        update();
+        if (res.code === 'busy') fail('지금 입력이 몰리고 있습니다. 잠시 뒤에 다시 눌러 주세요.');
+        else if (res.code === 'invalid') fail('입력한 내용을 다시 확인해 주세요.');
+        else fail('저장하지 못했습니다. 다시 눌러 주세요. 계속 안 되면 직원에게 말씀해 주세요.');
+      }).catch(function () {
+        sending = false;
+        update();
+        fail('저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요. 계속 안 되면 직원에게 말씀해 주세요.');
+      });
+    });
+
+    box.appendChild(notice ? h('p', { class: 'notice pad', role: 'alert', text: notice }) : document.createTextNode(''));
+    box.appendChild(head);
+    box.appendChild(form);
+    update();
+    show(box);
+  }
+
+  function showPass(cfg, key, rec) {
+    var at = new Date(rec.at);
+    var nowEl = h('dd', { id: 'now', text: hms(new Date()) });
+    show(h('section', { class: 'pass pad', 'aria-live': 'polite' }, [
+      h('div', { class: 'pass-card' }, [
+        lockSvg(true, 'var(--ok-bg)'),
+        h('h2', { text: '동의 완료' }),
+        h('p', { class: 'pass-name', text: rec.name }),
+        h('p', { class: 'pass-sub', text: rec.theme + ' · ' + rec.slot }),
+        h('dl', { class: 'times' }, [
+          h('div', null, [h('dt', { text: '연락처' }), h('dd', { text: rec.phone })]),
+          h('div', null, [h('dt', { text: '동의한 시각' }), h('dd', { text: ymd(at) + ' ' + hms(at) })]),
+          h('div', { class: 'live' }, [h('dt', { text: '지금 시각' }), nowEl])
+        ]),
+        h('p', { class: 'pass-note', text: cfg.settings.passNote || '직원에게 이 화면을 보여 주세요.' })
+      ]),
+      h('button', {
+        class: 'ghost', id: 'redo', type: 'button', text: '처음부터 다시 하기',
+        onclick: function () {
+          try { sessionStorage.removeItem(key); } catch (e) {}
+          showIntro(cfg, key);
+          window.scrollTo(0, 0);
+        }
+      })
+    ]));
+    timer = setInterval(function () { nowEl.textContent = hms(new Date()); }, 1000);
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>
